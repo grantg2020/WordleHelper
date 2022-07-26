@@ -9,6 +9,12 @@ public class WordleHelperIO {
 
     private ArrayList<String> words = new ArrayList<String>();
 
+    /**
+     * Default constructor
+     * 
+     * @param filename name of file
+     * @param length   length of each word
+     */
     public WordleHelperIO(String filename, int length) {
 
         try (Scanner f = new Scanner(new FileInputStream(filename))) {
