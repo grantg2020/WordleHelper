@@ -28,18 +28,24 @@ public class WordleHelper {
         String grayLetters = scanner.next();
 
         Map<String, Integer> greenMap = new HashMap<String, Integer>();
-        for (int i = 0; i < greenLetters.length(); i += 2) {
-            String letter = greenLetters.substring(i, i + 1);
-            int position = Integer.parseInt(greenLetters.substring(i + 1, i + 2));
-            greenMap.put(letter, position);
-        }
-        Map<String, Integer> yellowMap = new HashMap<String, Integer>();
-        for (int i = 0; i < yellowLetters.length(); i += 2) {
-            String letter = yellowLetters.substring(i, i + 1);
-            int position = Integer.parseInt(yellowLetters.substring(i + 1, i + 2));
-            yellowMap.put(letter, position);
+
+        if (!"0".equals(greenLetters)) {
+            for (int i = 0; i < greenLetters.length(); i += 2) {
+                String letter = greenLetters.substring(i, i + 1);
+                int position = Integer.parseInt(greenLetters.substring(i + 1, i + 2));
+                greenMap.put(letter, position);
+            }
         }
 
+        Map<String, Integer> yellowMap = new HashMap<String, Integer>();
+        if (!"0".equals(yellowLetters)) {
+            for (int i = 0; i < yellowLetters.length(); i += 2) {
+                String letter = yellowLetters.substring(i, i + 1);
+                int position = Integer.parseInt(yellowLetters.substring(i + 1, i + 2));
+                yellowMap.put(letter, position);
+            }
+        }
+        
         // Filter out words
         ArrayList<String> filterWords = new ArrayList<String>();
         filterWords.addAll(words);
