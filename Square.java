@@ -6,13 +6,15 @@ public class Square {
     private int scale;
     private String letter;
     private Color color;
+    private int position;
 
-    public Square(int x, int y, int scale, String letter, Color color) {
+    public Square(int x, int y, int scale, String letter, Color color, int position) {
         this.x = x;
         this.y = y;
         this.scale = scale;
         this.letter = letter;
         this.color = color;
+        this.position = position;
     }
 
     public Color getColor() {
@@ -29,6 +31,14 @@ public class Square {
 
     public int getY() {
         return y;
+    }
+
+    public int getPosition() {
+        return position;
+    }
+
+    public void setPosition(int position) {
+        this.position = position;
     }
 
     public int getScale() {

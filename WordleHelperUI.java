@@ -21,8 +21,8 @@ public class WordleHelperUI extends JPanel {
     private static String guess = "";
     private static String guessed = "";
     private static String word = "";
-    private static String greenLetters = "";
-    private static String yellowLetters = "";
+    // private static String greenLetters = "";
+    // private static String yellowLetters = "";
     private static WordleHelperIO wordleIO;
     private static boolean hasWon = false;
     private static boolean hasLost = false;
@@ -34,6 +34,49 @@ public class WordleHelperUI extends JPanel {
             { "Z", "X", "C", "V", "B", "N", "M" }
     };
 
+    public ArrayList<String> getValidWords() {
+        // squares and words
+        ArrayList<String> validWords = new ArrayList<String>();
+        for (String word : words) {
+            // Validate word
+            boolean isValid = true;
+
+            for (Square[] w : squares) {
+                ArrayList<String> yellowLetters = new ArrayList<String>();
+                for (Square letter : w) {
+                    if (letter.getColor() == Color.YELLOW || letter.getColor() == Color.GREEN)
+                        yellowLetters.add(letter.getLetter());
+                }
+                for (Square letter : w) {
+                    if (letter.getLetter().length() > 0) {
+                        if (letter.getColor() == Color.GRAY) {
+                            // If it contains any of the bad letters
+                            if (!yellowLetters.contains(letter.getLetter()) && word.contains(letter.getLetter())) {
+                                isValid = false;
+                            }
+                        } else if (letter.getColor() == Color.YELLOW) {
+                            // If it has yellow in the wrong spot
+                            if (letter.getLetter().equals("" + word.charAt(letter.getPosition())))
+                                isValid = false;
+
+                            // Or does not contain it
+                            if (!word.contains(letter.getLetter()))
+                                isValid = false;
+                        } else if (letter.getColor() == Color.GREEN) {
+                            // If it does not have green in the right spot
+                            if (!letter.getLetter().equals("" + word.charAt(letter.getPosition())))
+                                isValid = false;
+                        }
+                    }
+                }
+            }
+            if (isValid)
+                validWords.add(word);
+        }
+
+        return validWords;
+    }
+
     public WordleHelperUI() {
         wordleIO = new WordleHelperIO("words.txt", WORD_LENGTH);
         words = wordleIO.getWords();
@@ -41,7 +84,7 @@ public class WordleHelperUI extends JPanel {
             squares.add(new Square[MAX_GUESSES - 1]);
             for (int j = 0; j < squares.get(i).length; j++) {
                 squares.get(i)[j] = new Square(PADDING + (BOX_SCALE + PADDING) * j, PADDING + (BOX_SCALE + PADDING) * i,
-                        BOX_SCALE, "", Color.GRAY);
+                        BOX_SCALE, "", Color.GRAY, j);
             }
         }
 
@@ -53,13 +96,13 @@ public class WordleHelperUI extends JPanel {
             public void mouseClicked(MouseEvent e) {
                 Square s = getClickedSquare(e.getX(), e.getY());
 
-                if(s != null && !"".equals(s.getLetter())){
+                if (s != null && !"".equals(s.getLetter())) {
                     // System.out.println(s.getLetter());
-                    if(s.getColor() == Color.GRAY){
+                    if (s.getColor() == Color.GRAY) {
                         s.setColor(Color.GREEN);
-                    }else if(s.getColor() == Color.GREEN){
+                    } else if (s.getColor() == Color.GREEN) {
                         s.setColor(Color.YELLOW);
-                    }else {
+                    } else {
                         s.setColor(Color.GRAY);
                     }
                     repaint();
@@ -68,9 +111,6 @@ public class WordleHelperUI extends JPanel {
                 super.mouseClicked(e);
             }
         });
-
-        generateWord();
-        System.out.println(word);
     }
 
     /**
@@ -90,18 +130,13 @@ public class WordleHelperUI extends JPanel {
         return null;
     }
 
-    public static void generateWord() {
-        Random r = new Random();
-        word = words.get(r.nextInt(words.size()));
-    }
-
     public void paint(Graphics g) {
 
         g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 22));
 
-        guessed = "";
-        greenLetters = "";
-        yellowLetters = "";
+        // guessed = "";
+        // greenLetters = "";
+        // yellowLetters = "";
 
         if (guesses[guesses.length - 1] != null && guesses[guesses.length - 1].length() > 0 && !hasWon) {
             hasLost = true;
@@ -113,22 +148,22 @@ public class WordleHelperUI extends JPanel {
                 letters.add(word.charAt(i));
             }
 
-            if (guesses[j] != null) {
-                guessed += guesses[j];
-                // Remove green letters
-                for (int i = 0; i < guesses[j].length(); i++) {
-                    if (guesses[j].charAt(i) == word.charAt(i)) {
-                        greenLetters += "" + word.charAt(i);
-                        letters.remove((Character) word.charAt(i));
-                    }
-                    if (word.contains("" + guesses[j].charAt(i))) {
-                        yellowLetters += "" + guesses[j].charAt(i);
-                    }
-                }
-                if (letters.size() == 0) {
-                    hasWon = true;
-                }
-            }
+            // if (guesses[j] != null) {
+            // guessed += guesses[j];
+            // // Remove green letters
+            // for (int i = 0; i < guesses[j].length(); i++) {
+            // if (guesses[j].charAt(i) == word.charAt(i)) {
+            // greenLetters += "" + word.charAt(i);
+            // letters.remove((Character) word.charAt(i));
+            // }
+            // if (word.contains("" + guesses[j].charAt(i))) {
+            // yellowLetters += "" + guesses[j].charAt(i);
+            // }
+            // }
+            // if (letters.size() == 0) {
+            // hasWon = true;
+            // }
+            // }
 
             squares.forEach((Square[] s) -> {
                 for (int i = 0; i < s.length; i++) {
@@ -177,7 +212,7 @@ public class WordleHelperUI extends JPanel {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         // if()
-        frame.setBackground(Color.WHITE);
+        frame.setBackground(Color.BLACK);
         frame.getContentPane().add(ui);
         frame.setSize(850, 350);
         frame.setVisible(true);
@@ -208,8 +243,15 @@ public class WordleHelperUI extends JPanel {
         guessed = "";
         guesses = new String[MAX_GUESSES];
         numGuesses = 0;
-        generateWord();
+
         repaint();
+    }
+
+    @Override
+    public void repaint() {
+        super.repaint();
+        if (frame != null)
+            frame.setBackground(Color.black);
     }
 
     public class WordleKeyListener implements KeyListener {
@@ -230,12 +272,13 @@ public class WordleHelperUI extends JPanel {
                 return;
 
             char c = e.getKeyChar();
-            frame.setBackground(Color.black);
+
             if (Character.isLetter(c)) {
                 if (guess.length() < WORD_LENGTH)
                     guess += Character.toLowerCase(c);
 
             } else if (e.getKeyCode() == 10) {
+                System.out.println(getValidWords());
                 // Guess complete
                 if (guess.length() == WORD_LENGTH) {
                     if (wordleIO.isWord(guess.toLowerCase()) && numGuesses < MAX_GUESSES) {
@@ -243,8 +286,10 @@ public class WordleHelperUI extends JPanel {
                         Square[] s = squares.get(numGuesses);
                         for (int i = 0; i < s.length; i++) {
                             s[i].setLetter("" + guesses[numGuesses].charAt(i));
+                            s[i].setPosition(i);
                         }
                         numGuesses++;
+
                     } else {
                         frame.setBackground(Color.red);
                     }
@@ -254,7 +299,6 @@ public class WordleHelperUI extends JPanel {
                 // Backspace
                 if (guess.length() > 0)
                     guess = guess.substring(0, guess.length() - 1);
-                repaint();
             }
 
             repaint();
