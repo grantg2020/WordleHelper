@@ -1,6 +1,3 @@
-
-// TODO add unique letters as guesses for first three words OR maybe until there are at most five possible words
-// TODO maybe prioritize words with unique letters
 import javax.swing.*;
 import javax.swing.table.*;
 import java.awt.Graphics;
@@ -8,13 +5,14 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.event.*;
 import java.util.Random;
-import java.util.ArrayList;
+import java.util.*;
 
 public class WordleHelperUI extends JPanel {
     public static final int BOX_SCALE = 40;
     public static final int PADDING = 10;
     public static final int MAX_GUESSES = 6;
     public static final int WORD_LENGTH = 5;
+    public static final int NUM_UNIQUE_GUESSES = 4;
 
     public static String[] guesses = new String[MAX_GUESSES];
     public static int numGuesses = 0;
@@ -29,12 +27,64 @@ public class WordleHelperUI extends JPanel {
     private static boolean hasLost = false;
     private static ArrayList<String> words = new ArrayList<String>();
     private static ArrayList<String> validWords = new ArrayList<String>();
+    private static ArrayList<String> topFive = new ArrayList<String>();
     private static ArrayList<Square[]> squares = new ArrayList<Square[]>();
 
-    private static final String[][] keyboard = { { "Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P" },
-            { "A", "D", "S", "F", "G", "H", "J", "K", "L" },
-            { "Z", "X", "C", "V", "B", "N", "M" }
-    };
+    /**
+     * Gets the number of letters that have not been used in a guess in the word
+     * provided
+     * 
+     * @param word word to get number of unique letters from
+     * @return number of unique letters
+     */
+    public int getUniqueLetters(String word) {
+        int count = 0;
+        for (int i = 0; i < word.length(); i++) {
+            if (!guessed.contains("" + word.charAt(i)))
+                count++;
+        }
+        return count;
+    }
+
+    /**
+     * Returns an array list of up to five words based on amount of new characters
+     * 
+     * @return list of words
+     */
+    public ArrayList<String> getTopFiveWords() {
+        validWords = getValidWords();
+        // If only 5 words fit, no filters needed
+        if (validWords.size() <= 5)
+            return validWords;
+
+        ArrayList<String> usedWords;
+        usedWords = numGuesses <= NUM_UNIQUE_GUESSES ? words : validWords;
+
+        ArrayList<Word> wordScores = new ArrayList<Word>();
+
+        for (String word : usedWords) {
+            wordScores.add(new Word(word, getUniqueLetters(word)));
+        }
+
+        Collections.sort(wordScores);
+
+        ArrayList<String> topFive = new ArrayList<String>();
+        for (int i = 0; i < 5; i++) {
+            topFive.add(wordScores.get(i).getWord());
+        }
+
+        /**
+         * Guesses: "soare", "soaps"
+         * {
+         * "soare": 0,
+         * "soaps": 0,
+         * "built": 5,
+         * "spike": 2,
+         * }
+         */
+
+        return topFive;
+    }
 
     public ArrayList<String> getValidWords() {
         // squares and words
@@ -43,6 +93,7 @@ public class WordleHelperUI extends JPanel {
             // Validate word
             boolean isValid = true;
             for (Square[] w : squares) {
+
                 String guess = "";
                 ArrayList<String> validLetters = new ArrayList<String>();
                 ArrayList<String> greenLetters = new ArrayList<String>();
@@ -58,18 +109,21 @@ public class WordleHelperUI extends JPanel {
                 for (Square letter : w)
                     guess += letter.getLetter();
 
+                if (guess.length() != 5)
+                    continue;
+
                 // Validate letters based on color
                 for (Square letter : w) {
-                    String l = "" + word.charAt(letter.getPosition());
+                    String guessLetter = "" + word.charAt(letter.getPosition());
                     if (letter.getLetter().length() > 0) {
                         if (letter.getColor() == Color.GRAY) {
                             // If it contains any of the bad letters
-                            if (!validLetters.contains(l) && word.contains(letter.getLetter())) {
+                            if (!validLetters.contains(letter.getLetter()) && word.contains(letter.getLetter())) {
                                 isValid = false;
                             }
                         } else if (letter.getColor() == Color.YELLOW) {
                             // If it has yellow in the wrong spot
-                            if (letter.getLetter().equals(l))
+                            if (letter.getLetter().equals(guessLetter))
                                 isValid = false;
 
                             // Or does not contain it outside of green letters
@@ -77,7 +131,7 @@ public class WordleHelperUI extends JPanel {
 
                             for (String le : greenLetters) {
                                 if (word.contains(le))
-                                    tempWord = tempWord.substring(0, tempWord.indexOf(le))
+                                    tempWord = tempWord.substring(0, tempWord.indexOf(le) + 1)
                                             + tempWord.substring(tempWord.indexOf(le) + 1);
                             }
 
@@ -140,12 +194,15 @@ public class WordleHelperUI extends JPanel {
                     } else {
                         s.setColor(Color.GRAY);
                     }
+                    topFive = getTopFiveWords();
                     repaint();
                 }
 
                 super.mouseClicked(e);
             }
         });
+
+        topFive = getTopFiveWords();
     }
 
     /**
@@ -212,9 +269,10 @@ public class WordleHelperUI extends JPanel {
 
         }
         g.setColor(Color.white);
+
         for (int i = 0; i < 5; i++) {
-            if (validWords.size() > i)
-                g.drawChars(validWords.get(i).toCharArray(), 0, 5,
+            if (topFive.size() > i)
+                g.drawChars(topFive.get(i).toCharArray(), 0, 5,
                         (BOX_SCALE / 2 - 8) + PADDING + (BOX_SCALE + PADDING) * 7,
                         (BOX_SCALE / 2 + 7) +
                                 PADDING + (BOX_SCALE + PADDING) * i);
@@ -248,6 +306,7 @@ public class WordleHelperUI extends JPanel {
         // Display the window.
         // frame.pack();
         frame.setVisible(true);
+
     }
 
     public static void main(String[] args) {
@@ -263,7 +322,6 @@ public class WordleHelperUI extends JPanel {
 
     public void resetGame() {
         hasWon = hasLost = false;
-        guessed = "";
         guesses = new String[MAX_GUESSES];
         numGuesses = 0;
 
@@ -294,8 +352,6 @@ public class WordleHelperUI extends JPanel {
                     guess += Character.toLowerCase(c);
 
             } else if (e.getKeyCode() == 10) {
-                validWords = getValidWords();
-                System.out.println(validWords);
                 // Guess complete
                 if (guess.length() == WORD_LENGTH) {
                     if (wordleIO.isWord(guess.toLowerCase()) && numGuesses < MAX_GUESSES) {
@@ -306,12 +362,16 @@ public class WordleHelperUI extends JPanel {
                             s[i].setPosition(i);
                         }
                         numGuesses++;
+                        guessed += guess;
 
                     } else {
                         frame.setBackground(Color.red);
                     }
                     guess = "";
                 }
+
+                topFive = getTopFiveWords();
+
             } else if (e.getKeyCode() == 8) {
                 // Backspace
                 if (guess.length() > 0)
